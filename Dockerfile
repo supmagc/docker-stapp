@@ -18,4 +18,7 @@ ENV CHROME_BIN=/usr/bin/chromium-browser \
     CHROME_PATH=/usr/lib/chromium/
 
 # Install watchdog for file monitoring
-RUN pip install watchdog
+#RUN pip install watchdog
+RUN apk add py3-watchdog
+
+
