@@ -16,8 +16,25 @@ env:
   IMAGE_TAG: latest
 
 jobs:
+  check-base:
+    runs-on: ubuntu-latest
+    outputs:
+      needs-updating: ${{ steps.check.outputs.needs-updating }}
+    steps:
+      - name: Check if base image has updated
+        id: check
+        # This only runs on scheduled events
+        if: github.event_name == 'schedule'
+        uses: lucacome/docker-image-update-checker@v1
+        with:
+          base-image: stashapp/stash:latest
+          image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          
   build:
     runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'schedule' || 
+      needs.check-base.outputs.needs-updating == 'true'
     permissions:
       contents: read
       packages: write
@@ -48,5 +65,7 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            type=gha
           cache-to: type=gha,mode=max
